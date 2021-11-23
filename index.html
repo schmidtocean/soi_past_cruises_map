@@ -52,6 +52,10 @@ body { margin: 0; padding: 0;background-color: black; }
   z-index: 1;
 
 }
+
+.attribution{
+
+}
 </style>
 </head>
 <body>
@@ -72,6 +76,7 @@ body { margin: 0; padding: 0;background-color: black; }
 	var map = new mapboxgl.Map({
         container: 'map',
         //style: 'mapbox://styles/soidpm/ckn7scdev1e4v17nvxjp5xdgt',
+        attributionControl: false,
         style: 'mapbox://styles/mapbox/dark-v10',
         center: [118,-34],
         zoom: 3.12,
@@ -358,9 +363,19 @@ var scale = new mapboxgl.ScaleControl({
 maxWidth: 80,
 unit: 'imperial'
 });
+
+map.addControl(new mapboxgl.AttributionControl({
+customAttribution: '<a href="https:schmidtocean.org" target="_black" role="listitem">Schmidt Ocean Institute</a>'
+}));
+
+
 map.addControl(scale);
  
 scale.setUnit('metric');
+
+
+
+
 
 </script>
  
