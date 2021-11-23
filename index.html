@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>2018_2021_Map_vector_test</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v1.13.1/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v1.13.1/mapbox-gl.js"></script>
+
+<style>
+body { margin: 0; padding: 0;background-color: black; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+/* #top { color:whitesmoke; font-size: 16px;position:relative;} */
+#side{
+    position: absolute;
+    height:100vh;
+    background-color: transparent;
+    right:0;
+    display: flex;
+}
+#card{
+    position: relative;
+    width:250px;
+    height:300px;
+    background-color:  #383838;
+    border: 2px solid whitesmoke;
+    margin: auto;
+    margin-right: 30px;
+  
+
+}
+.title{
+    color: whitesmoke;
+    text-align: center;
+    padding:5px;
+    border-bottom: 1px solid whitesmoke;
+
+}
+
+#info {
+  margin-right: 10px;
+  text-align: right;
+  right: 20vw;
+  left: 10px;
+  font: 15px arial, sans-serif;
+  border: none;
+  font-size: 12px;
+  color:white;
+  background: none;
+  height:auto;
+  position: absolute;
+  z-index: 1;
+
+}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<pre id='info'></pre>
+<div id=side>
+    <div id="card">
+        <div id="cardTitle" class ="title">   </div>
+        <div id="subTitle" class ="title">   </div>
+    </div>
+</div>
+
+<!-- <nav id="menu"></nav> -->
+
+<script>
+
+	mapboxgl.accessToken = "pk.eyJ1Ijoic29pZHBtIiwiYSI6ImNrbjdzYzYwejByOGcydnJpbW53N3E2MzcifQ.rXD_30_U3teOx4JnoiKrWQ";
+	var map = new mapboxgl.Map({
+        container: 'map',
+        //style: 'mapbox://styles/soidpm/ckn7scdev1e4v17nvxjp5xdgt',
+        style: 'mapbox://styles/mapbox/dark-v10',
+        center: [118,-34],
+        zoom: 3.12,
+        minZoom: 2,
+        maxZoom: 22
+    });
+    
+var zoomThreshold = 10;
+var complete_cruise_list = {
+    "2021":["FK210206","FK210313","FK210321","FK210409","FK210501"],
+    "2020":["FK200103","FK200122",  "FK200126", "FK200308", "FK200409", "FK200429", "FK200802", "FK200930","FK201122","FK201228"],
+    "2019":["FK190106","FK190211","FK190315","FK190529","FK190612","FK190709","FK190726","FK190831","FK191005","FK191012","FK191021","FK191031","FK191120","FK191229"],
+    "2018":["FK180119","FK180310","FK180415","FK180420","FK180528","FK180624","FK180722","FK180731","FK180824","FK181005","FK181031","FK181210"]
+}
+//add "FK181210" back in
+var complete_sub_list= {
+    "2021":["FK210321","FK210409"],
+    "2020":["FK200122",  "FK200126", "FK200308", "FK200429", "FK200802", "FK200930"],
+    "2019":["FK190106","FK190211","FK190529","FK190612","FK190726","FK190831","FK191012"],
+    "2018":["FK180420","FK180731","FK180824","FK181005","FK181031","FK181210"]
+}
+
+var cruises =  Object.values(complete_cruise_list).flat()
+ var subcruises =  Object.values(complete_sub_list).flat()
+// var colors =["#f7f7f7","#d9d9d9","#bdbdbd","#969696","#737373","#525252","#252525","black"]
+// var hoveredStateId = null;
+map.on('load', function () { 
+    map.setPaintProperty('water', 'fill-color', '#78bced');
+    map.addSource('10m-bathymetry-81bsvj', {
+	    type: 'vector',
+	    url: 'mapbox://mapbox.9tm8dx88'
+	});
+
+    
+	map.addLayer(
+		{
+			'id': '10m-bathymetry-81bsvj',
+			'type': 'fill',
+			'source': '10m-bathymetry-81bsvj',
+			'source-layer': '10m-bathymetry-81bsvj',
+			'layout': {},
+			'paint': {
+			'fill-outline-color': 'hsla(337, 82%, 62%, 0)',
+			// cubic bezier is a four point curve for smooth and precise styling
+			// adjust the points to change the rate and intensity of interpolation
+			'fill-color': [
+			'interpolate',
+			['cubic-bezier', 0, 0.5, 1, 0.5],
+			['get', 'DEPTH'],
+			200,
+			'#78bced',
+			9000,
+			'#15659f'
+			]
+			}
+		},
+			'land-structure-polygon'
+	);
+
+    map.addSource('FKALL', {
+
+        "type": "vector",
+        "url":"https://api.maptiler.com/tiles/9526359d-2e54-46bd-93f3-89454e7033c3/tiles.json?key=egFVe2SmC2zBUYnGILbj"
+    })
+
+    // map.addSource('SBstart', {
+    //     "type":'geojson',
+    //     'data':'./static/SB_SPRINT_START_ALL.json'
+    // })
+    map.addSource('FKAllstart', {
+        "type":'geojson',
+        'data':'./static/FKNAV_Starts_ALL.json'
+    })
+    
+    cruises.forEach((e,i)=>{
+        map.addLayer({
+        'id': 'multiline' + e,
+        'type': 'line',
+        'source': 'FKALL',
+        'source-layer':e+'FKNAVGGA_Min_Line',
+        'layout': {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                    },
+        'paint': {
+        'line-color': 'black',
+        'line-width': 1
+        }
+
+        });
+
+        map.addLayer({
+        'id': 'point'+e,
+        'type': 'circle',
+        'source': "FKALL",
+        'source-layer':e+'FKNAVGGA',
+        // 'minzoom': zoomThreshold,
+        'paint': {
+            'circle-radius': {
+                    'base': 1.75,
+                    'stops': [
+                            [10, 2],
+                            [22, 5]
+                        ]
+                    },
+            'circle-color': 'black'
+            }
+        })   
+        
+        map.on('mouseenter', 'multiline' + e, function (q) {
+        // Change the cursor style as a UI indicator.
+            map.getCanvas().style.cursor = 'pointer';
+   
+            var description = q.features[0].properties;
+            c= document.getElementById('cardTitle')
+            c.innerText= description.cruise_id
+            s= document.getElementById('subTitle')
+            s.innerText= '  '
+
+        });
+        map.on('mouseleave', 'multiline' + e, function (q) {
+        // Change the cursor style as a UI indicator.
+            map.getCanvas().style.cursor = 'default';
+        
+        });
+
+    });  
+            
+
+    // subcruises.forEach((e,i)=>{
+    //     map.addLayer({
+    //     'id': 'sbpoint'+e,
+    //     'type': 'circle',
+    //     'source': 'FKALL',
+    //     'source-layer':e+'SBSPRINT',
+    //     'minzoom': zoomThreshold,
+    //     'paint':{
+    //         'circle-radius': {
+    //                 'base': 1.75,
+    //                 'stops': [
+    //                         [10, 2],
+    //                         [22, 5]
+    //                     ]
+    //                 },
+    //         'circle-color': 'grey'  
+    //             }      
+    //     });
+        
+    //     // map.addLayer({
+    //     // 'id': 'sbpointhover'+e,
+    //     // 'type': 'circle',
+    //     // 'source': 'FKALL',
+    //     // 'source-layer':e+'SBSPRINT',
+    //     // // 'minzoom': zoomThreshold,
+    //     // 'paint':{
+    //     //     'circle-color': 'grey',
+    //     //     'circle-radius': [
+    //     //         "case",
+    //     //             ["boolean",["feature-state","hover"], false],
+    //     //         10,2 ]
+    //     //         }      
+    //     // });
+
+    //     map.addLayer({
+    //     'id': 'sbpoint1'+e,
+    //     'type': 'line',
+    //     'source': 'FKALL',
+    //     'source-layer':e+'SBSPRINT_Line',
+    //     'paint': {
+    //         'line-color': 'grey',
+    //         'line-width': 1
+    //         }  
+    //     });
+
+    //     map.on('mouseenter','sbpoint1'+e, function (q) {
+    //     // Change the cursor style as a UI indicator.
+    //         map.getCanvas().style.cursor = 'pointer';
+   
+    //         var description = q.features[0].properties;
+    //         c= document.getElementById('cardTitle')
+    //         c.innerText= description.cruise_id
+    //         s= document.getElementById('subTitle')
+    //         s.innerText= description.dive_id
+
+
+    //     });
+    //     map.on('mouseleave', 'sbpoint1'+e, function (q) {
+    //     // Change the cursor style as a UI indicator.
+    //         map.getCanvas().style.cursor = 'default';
+          
+    //     });
+
+    // });
+
+    // map.loadImage('./static/sub1.png', function(error, image) {
+    //     if (error) throw error;
+    //     // Add the loaded image to the style's sprite with the ID 
+    //     map.addImage('sub', image);
+        
+    //     map.addSource('point', {
+    //                 'type': 'geojson',
+    //                     'data': {
+    //                     'type': 'FeatureCollection',
+    //                     'features': [
+    //                     {
+    //                     'type': 'Feature',
+    //                     'geometry': {
+    //                     'type': 'Point',
+    //                     'coordinates': [-77.4144, 25.0759]
+    //                     }
+    //                     }
+    //                 ]
+    //             }
+    //         })
+    // });
+
+    // //start of dives
+    // map.addLayer({
+    // 'id': 'sbpoint1',
+    // 'type': 'symbol',
+    // 'source': 'SBstart',
+    // 'layout': {
+    //     'icon-image': 'sub', // reference the image
+    //     "icon-size":{'base': .5,
+    //             'stops': [
+    //                     [1, .5],
+    //                     [22, 1]
+    //                 ]
+    //             },
+    //         "icon-allow-overlap":true
+    //     }
+    // });
+
+    map.loadImage('./static/vessel2.png', function(error, image) {
+        if (error) throw error;
+        // Add the loaded image to the style's sprite with the ID 
+        map.addImage('vessel', image);
+        
+        map.addSource('point', {
+                    'type': 'geojson',
+                        'data': {
+                        'type': 'FeatureCollection',
+                        'features': [
+                        {
+                        'type': 'Feature',
+                        'geometry': {
+                        'type': 'Point',
+                        'coordinates': [-77.4144, 25.0759]
+                        }
+                        }
+                    ]
+                }
+            })
+    });
+    //start of FK
+    map.addLayer({
+    'id': 'vesselpt1',
+    'type': 'symbol',
+    'source': 'FKAllstart',
+    'layout': {
+        'icon-image': 'vessel', // reference the image
+        "icon-size":{'base': .1,
+                'stops': [
+                        [1, .1],
+                        [22, .5]
+                    ]
+                },
+         "icon-allow-overlap":true
+        }
+    });
+
+    //show location of cursur in lower map corner
+    map.on('mousemove', function (e) {
+            document.getElementById('info').innerHTML =
+            JSON.stringify(e.lngLat);
+
+    })
+
+        
+
+        
+})
+var scale = new mapboxgl.ScaleControl({
+maxWidth: 80,
+unit: 'imperial'
+});
+map.addControl(scale);
+ 
+scale.setUnit('metric');
+
+</script>
+ 
+</body>
+</html>
